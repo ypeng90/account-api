@@ -1,0 +1,9 @@
+.env.*
+.secret
+.coverage
+default.log
+.idea/
+.pytest_cache/
+__pycache__/
+staticfiles/
+data/

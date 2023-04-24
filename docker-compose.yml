@@ -1,0 +1,80 @@
+#Codes and static resources are mounted. No rebuild is needed
+#for changes of codes and static resources.
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6.0.5-jammy
+    container_name: mongo
+    restart: on-failure
+    # Creates folders if not existing on compose up.
+    volumes:
+      - ./data/db:/data/db
+    env_file:
+      - ./.env.dev
+  # rabbit:
+  #   image: rabbitmq:3.10
+  #   container_name: shopping-rabbit
+  #   restart: on-failure
+  #   env_file:
+  #     - ./.env.dev
+  # redis:
+  #   image: redis:7.0
+  #   container_name: shopping-redis
+  #   restart: on-failure
+  #   env_file:
+  #     - ./.env.dev
+  account:
+    build: .
+    image: account
+    container_name: account
+    restart: on-failure
+    # Migrate only once when using MongoDB and Djongo
+    # command: ["sh", "-c", "python manage.py makemigrations --no-input && python manage.py migrate --no-input && python manage.py collectstatic --no-input && python manage.py runserver 0.0.0.0:8000"]
+    # command: ["sh", "-c", "tail -f /dev/null"]
+    # command: ["sh", "./wait-for", "mongo:27017", "--", "sh", "-c", "tail -f /dev/null"]
+    command: ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]
+    env_file:
+      - ./.env.dev
+    volumes:
+      - .:/home/app
+    ports:
+      - 8000:8000
+    depends_on:
+      - mongo
+    networks:
+      - default
+      # - scraper
+  # worker:
+  #   image: shopping-web
+  #   container_name: shopping-worker
+  #   restart: on-failure
+  #   command: ["sh", "./wait-for", "web:8000", "--", "sh", "-c", "celery -A shopping worker --concurrency=4 -l info -O fair"]
+  #   volumes:
+  #     - ./shopping:/home/app
+  #   env_file:
+  #     - ./.env.dev
+  #   depends_on:
+  #     - rabbit
+  #     - redis
+  #     - web
+  #   networks:
+  #     - default
+  #     - scraper
+  # nginx:
+  #   build: ./nginx
+  #   image: shopping-nginx
+  #   container_name: shopping-nginx
+  #   restart: on-failure
+  #   volumes:
+  #     - ./shopping/staticfiles:/home/app/staticfiles
+  #   ports:
+  #     - 80:80
+  #   depends_on:
+  #     - web
+
+networks:
+  default:
+    name: account
+  # scraper:
+  #   name: scraper
