@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "djoser",
     "api",
 ]
 
@@ -87,7 +88,7 @@ DATABASES = {
     "default": {
         "ENGINE": "djongo",
         "NAME": MONGO_DATABASE,
-        "ENFORCE_SCHEMA": False,
+        "ENFORCE_SCHEMA": True,
         "CLIENT": {
             "host": f"mongodb://{MONGO_HOST}:{MONGO_PORT}",
             "username": MONGO_USERNAME,
@@ -152,11 +153,11 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
-    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_TYPES": ("JWT",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
@@ -167,4 +168,23 @@ SIMPLE_JWT = {
     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
+}
+
+DJOSER = {
+    "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
+    "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
+    "ACTIVATION_URL": "#/activate/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL": False,
+    "SEND_CONFIRMATION_EMAIL": False,
+    "PASSWORD_CHANGED_EMAIL_CONFIRMATION": False,
+    "LOGOUT_ON_PASSWORD_CHANGE": True,
+    "TOKEN_MODEL": None,
+    "SERIALIZERS": {},
+    "PERMISSIONS": {
+        "username_reset": ["rest_framework.permissions.IsAdminUser"],
+        "username_reset_confirm": ["rest_framework.permissions.IsAdminUser"],
+        "set_username": ["rest_framework.permissions.IsAdminUser"],
+        "token_create": ["rest_framework.permissions.IsAdminUser"],
+        "token_destroy": ["rest_framework.permissions.IsAdminUser"],
+    },
 }

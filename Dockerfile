@@ -1,5 +1,5 @@
 # Pull official base image.
-FROM python:3.11-bullseye
+FROM python:3.10-bullseye
 
 # Prevents Python from writing .pyc files,
 # equivalent to python -B.
