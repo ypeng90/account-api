@@ -89,7 +89,7 @@ DATABASES = {
     "default": {
         "ENGINE": "djongo",
         "NAME": MONGO_DATABASE,
-        "ENFORCE_SCHEMA": True,
+        "ENFORCE_SCHEMA": False,
         "CLIENT": {
             "host": f"mongodb://{MONGO_HOST}:{MONGO_PORT}",
             "username": MONGO_USERNAME,
