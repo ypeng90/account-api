@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "djoser",
     "api",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -140,14 +141,15 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    "DEFAULT_FILTER_BACKENDS": [
-        "rest_framework.filters.OrderingFilter",
-        "rest_framework.filters.SearchFilter",
-    ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
+    "DEFAULT_FILTER_BACKENDS": [
+        "rest_framework.filters.OrderingFilter",
+        "rest_framework.filters.SearchFilter",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 6,
 }
@@ -187,4 +189,13 @@ DJOSER = {
         "token_create": ["rest_framework.permissions.IsAdminUser"],
         "token_destroy": ["rest_framework.permissions.IsAdminUser"],
     },
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Account Management API",
+    "DESCRIPTION": "Account Management API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "PREPROCESSING_HOOKS": ["drf_spectacular.hooks.preprocess_exclude_path_format"],
+    "SWAGGER_UI_SETTINGS": {"defaultModelsExpandDepth": -1},
 }
