@@ -32,7 +32,8 @@
 				"TabNine.tabnine-vscode",
 				"ms-python.flake8",
 				"almenon.arepl",
-				"ms-python.black-formatter"
+				"ms-python.black-formatter",
+				"sourcegraph.sourcegraph"
 			]
 		}
 	}
