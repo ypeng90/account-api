@@ -199,3 +199,5 @@ SPECTACULAR_SETTINGS = {
     "PREPROCESSING_HOOKS": ["drf_spectacular.hooks.preprocess_exclude_path_format"],
     "SWAGGER_UI_SETTINGS": {"defaultModelsExpandDepth": -1},
 }
+
+EMAIL_BACKEND = "api.gmail.GmailBackend"
