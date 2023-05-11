@@ -35,6 +35,7 @@ services:
     networks:
       - default
       - db
+      - esdb
   # worker:
   #   image: shopping-web
   #   container_name: shopping-worker
@@ -68,3 +69,5 @@ networks:
     name: account
   db:
     name: mongo
+  esdb:
+    name: esdb
