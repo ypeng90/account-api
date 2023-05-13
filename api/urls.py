@@ -19,9 +19,11 @@ from .views import CustomizedUserViewSet
 
 
 user_list = CustomizedUserViewSet.as_view({"get": "list", "post": "create"})
+# Get User object from db -> meaningful id, username and password
 user_detail = CustomizedUserViewSet.as_view(
     {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
 )
+# Get User object from token -> meaningful id and empty username and password
 user_me = CustomizedUserViewSet.as_view(
     {"get": "me", "put": "me", "patch": "me", "delete": "me"}
 )

@@ -148,6 +148,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_FILTER_BACKENDS": [
@@ -173,6 +174,7 @@ SIMPLE_JWT = {
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "TOKEN_OBTAIN_SERIALIZER": "api.serializers.StatelessTokenObtainPairSerializer",
+    # "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
 }
@@ -189,7 +191,12 @@ DJOSER = {
     "TOKEN_MODEL": None,
     "SERIALIZERS": {},
     "PERMISSIONS": {
-        "user": ["rest_framework.permissions.IsAdminUser"],
+        # Customized permissions to compare UUID and string.
+        "user": ["api.permissions.CurrentUserOrAdmin"],
+        "user_list": ["api.permissions.CurrentUserOrAdmin"],
+        "user_delete": ["api.permissions.CurrentUserOrAdmin"],
+        "set_password": ["api.permissions.CurrentUserOrAdmin"],
+        # Belowing permissions are not required but used as safeguards to disable all related endpoints.
         "username_reset": ["rest_framework.permissions.IsAdminUser"],
         "username_reset_confirm": ["rest_framework.permissions.IsAdminUser"],
         "set_username": ["rest_framework.permissions.IsAdminUser"],
