@@ -7,4 +7,4 @@ from uuid import uuid4
 # Create your models here.
 class MyUser(AbstractUser):
     email = models.EmailField(gettext_lazy("email address"))
-    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
