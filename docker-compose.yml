@@ -15,16 +15,17 @@ services:
   #   restart: on-failure
   #   env_file:
   #     - ./.env.dev
-  account:
+  account-api:
     build: .
-    image: account
-    container_name: account
+    image: account-api
+    container_name: account-api
     restart: on-failure
     # Migrate only once when using MongoDB and Djongo
     # command: ["sh", "-c", "python manage.py makemigrations --no-input && python manage.py migrate --no-input && python manage.py collectstatic --no-input && python manage.py runserver 0.0.0.0:8000"]
     # command: ["sh", "-c", "tail -f /dev/null"]
     # command: ["sh", "./wait-for", "mongo:27017", "--", "sh", "-c", "tail -f /dev/null"]
     # command: ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]
+    command: ["sh", "-c", "while sleep 1000; do :; done"]
     env_file:
       - ./.env.dev
     volumes:
@@ -34,8 +35,9 @@ services:
       - 8001:8001
     networks:
       - default
-      - db
+      - commanddb
       - esdb
+      - querydb
   # worker:
   #   image: shopping-web
   #   container_name: shopping-worker
@@ -66,8 +68,10 @@ services:
 
 networks:
   default:
-    name: account
-  db:
-    name: mongo
+    name: account-api
+  commanddb:
+    name: postgres
   esdb:
     name: esdb
+  querydb:
+    name: mongo

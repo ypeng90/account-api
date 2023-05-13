@@ -7,6 +7,13 @@ from googleapiclient.errors import HttpError
 import os
 from django.core.mail.backends.base import BaseEmailBackend
 
+# When see google.auth.exceptions.RefreshError
+# ('deleted_client: The OAuth client was deleted.',
+# {'error': 'deleted_client', 'error_description': 'The OAuth client was deleted.'})
+# 1. Create a new credentials
+# https://console.cloud.google.com/apis/credentials
+# 2. Run `python gmail.py` to reauthenticate
+
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SERVICE_ACCOUNT_EMAIL = os.environ.get("SERVICE_ACCOUNT_EMAIL")
