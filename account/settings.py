@@ -148,7 +148,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",
-        # "rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_FILTER_BACKENDS": [
@@ -174,7 +173,6 @@ SIMPLE_JWT = {
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "TOKEN_OBTAIN_SERIALIZER": "api.serializers.StatelessTokenObtainPairSerializer",
-    # "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
 }
@@ -189,7 +187,9 @@ DJOSER = {
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": False,
     "LOGOUT_ON_PASSWORD_CHANGE": True,
     "TOKEN_MODEL": None,
-    "SERIALIZERS": {},
+    "SERIALIZERS": {
+        "user_create": "api.serializers.MyUserCreateSerializer",
+    },
     "PERMISSIONS": {
         # Customized permissions to compare UUID and string.
         "user": ["api.permissions.CurrentUserOrAdmin"],
