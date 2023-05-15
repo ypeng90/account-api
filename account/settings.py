@@ -83,6 +83,13 @@ WSGI_APPLICATION = "account.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+MONGO_DATABASE = os.environ.get("MONGO_INITDB_DATABASE")
+MONGO_USERNAME = os.environ.get("MONGO_INITDB_ROOT_USERNAME")
+MONGO_PASSWORD = os.environ.get("MONGO_INITDB_ROOT_PASSWORD")
+MONGO_HOST = os.environ.get("MONGO_HOST")
+MONGO_PORT = os.environ.get("MONGO_PORT")
+MONGO_RSNAME = os.environ.get("MONGO_RSNAME", "rs0")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -94,12 +101,12 @@ DATABASES = {
     },
     "querydb": {
         "ENGINE": "djongo",
-        "NAME": os.environ.get("MONGO_INITDB_DATABASE"),
+        "NAME": MONGO_DATABASE,
         "ENFORCE_SCHEMA": False,
         "CLIENT": {
-            "host": f"mongodb://{os.environ.get('MONGO_HOST')}:{os.environ.get('MONGO_PORT')}",
-            "username": os.environ.get("MONGO_INITDB_ROOT_USERNAME"),
-            "password": os.environ.get("MONGO_INITDB_ROOT_PASSWORD"),
+            "host": f"mongodb://{MONGO_HOST}:{MONGO_PORT}/?replicaSet={MONGO_RSNAME}",
+            "username": MONGO_USERNAME,
+            "password": MONGO_PASSWORD,
         },
     },
 }
@@ -182,7 +189,7 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
     "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
     "ACTIVATION_URL": "#/activate/{uid}/{token}",
-    "SEND_ACTIVATION_EMAIL": True,
+    "SEND_ACTIVATION_EMAIL": False,
     "SEND_CONFIRMATION_EMAIL": False,
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": False,
     "LOGOUT_ON_PASSWORD_CHANGE": True,

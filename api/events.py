@@ -1,6 +1,10 @@
-from uuid import uuid4
 from esdbclient import ESDBClient, NewEvent
+from django.conf import settings
 import pickle
+import json
+from pymongo import MongoClient
+from threading import Thread
+from uuid import uuid4, UUID
 
 # TODO: fix exceptions.DiscoveryFailed and use secure cluster instead of insecure single server.
 #       Failed to read from gossip seed: ['esdb.node1:2111', 'esdb.node2:2112', 'esdb.node3:2113']
@@ -23,12 +27,10 @@ class ESClient(ESDBClient):
         elif stream == "token":
             self.stream_name = "token-72523e70-4b0f-489a-8f13-e08cbb176dff"
 
-        if data:
-            match type:
-                case "UserCreated":
-                    self.event = NewEvent(type="UserCreated", data=bytes(data))
-                case _:
-                    self.event = None
+        if type and data:
+            self.event = NewEvent(type=type, data=bytes(data, encoding="utf-8"))
+        else:
+            self.event = None
 
     def send(self):
         assert self.event is not None
@@ -54,6 +56,73 @@ class ESClient(ESDBClient):
             stream_name=self.stream_name, stream_position=stream_position
         )
         return subscription
+
+
+def callback_user_created(session, user, stream_position):
+    db = session.client[settings.MONGO_DATABASE]
+    # Setting mongo as default database temporarily and then migration creates a set of
+    # collections, including api_myuser.
+    users = db["api_myuser"]
+    positions = db["stream_positions"]
+    # Must pass the session to the operations.
+    users.insert_one(user, session=session)
+    positions.update_one(
+        {"stream_type": "user"},
+        {"$set": {"stream_position": stream_position}},
+        upsert=True,
+        session=session,
+    )
+
+
+def catch_up_user_events():
+    client_esdb = ESClient("user")
+    client_mongo = MongoClient(
+        host=settings.MONGO_HOST,
+        port=int(settings.MONGO_PORT),
+        username=settings.MONGO_USERNAME,
+        password=settings.MONGO_PASSWORD,
+        replicaSet=settings.MONGO_RSNAME,
+    )
+
+    db = client_mongo[settings.MONGO_DATABASE]
+    result = db["stream_positions"].find_one({"stream_type": "user"})
+    if result:
+        processed_position = result["stream_position"]
+    else:
+        processed_position = 0
+
+    for event in client_esdb.subscribe(processed_position):
+        stream_position = event.stream_position
+        match event.type:
+            case "UserCreated":
+                user = json.loads(event.data)
+                user["id"] = UUID(user["id"])
+                # Use transaction to ensure atomicity of event processing and "acknowledgement".
+                # Start a transaction, execute the callback, and commit (or abort on error).
+                with client_mongo.start_session() as session:
+                    session.with_transaction(
+                        lambda s: callback_user_created(s, user, stream_position),
+                    )
+            case _:
+                pass
+
+
+# TODO: Implement this function
+# def catch_up_token_events():
+#     while True:
+#         print("Hello from token events")
+#         time.sleep(60)
+
+
+def subscribe_events():
+    # Daemon=True to terminate the threads when the main process terminates.
+    # No joinning the threads so that the caller function subscribe_events
+    # can finish and thus function ready can finish to let the server do the
+    # work.
+    thread_user = Thread(target=catch_up_user_events, daemon=True)
+    thread_user.start()
+    # thread_token = Thread(target=catch_up_token_events, daemon=True)
+    # thread_token.start()
 
 
 def test():

@@ -3,9 +3,22 @@ from django.core import exceptions as django_exceptions
 from django.db import transaction
 from djoser.conf import settings
 from djoser.serializers import UserCreateMixin
+import json
+
 from rest_framework import serializers
 from rest_framework.settings import api_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .events import ESClient
+
+# Workaround to serialize UUIDs
+# from json import JSONEncoder
+# from uuid import UUID
+# old_default = JSONEncoder.default
+# def new_default(self, obj):
+#     if isinstance(obj, UUID):
+#         return str(obj)
+#     return old_default(self, obj)
+# JSONEncoder.default = new_default
 
 User = get_user_model()
 
@@ -24,13 +37,31 @@ class StatelessTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class MyUserCreateMixin(UserCreateMixin):
     def perform_create(self, validated_data):
+        # Use transaction to ensure atomicity of user creation and event sending.
         with transaction.atomic():
             user = User.objects.create_user(**validated_data)
             if settings.SEND_ACTIVATION_EMAIL:
                 user.is_active = False
                 user.save(update_fields=["is_active"])
-            # TODO: Send UserCreated event
-            # print(user)
+            data = json.dumps(
+                {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "password": user.password,
+                    "email": user.email,
+                    "is_active": user.is_active,
+                    "is_superuser": user.is_superuser,
+                    "is_staff": user.is_staff,
+                }
+            )
+            client = ESClient(
+                "user",
+                "UserCreated",
+                data,
+            )
+            client.send()
+            client.close()
+
         return user
 
 
