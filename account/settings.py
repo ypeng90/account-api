@@ -111,6 +111,28 @@ DATABASES = {
     },
 }
 
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT")
+REDIS_USER = os.environ.get("REDIS_USER")
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
+REDIS_DB = os.environ.get("REDIS_DB")
+# Default TTL in seconds.
+# Set as token lifetime since caches are per tokens.
+CACHE_TTL = int(os.environ.get("ACCESS_TOKEN_LIFETIME", "60")) * 60
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{REDIS_USER}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": REDIS_PASSWORD,
+            "TIMEOUT": CACHE_TTL,
+            "KEY_PREFIX": os.environ.get("REDIS_KEY_PREFIX", "account-api-dev"),
+            "IGNORE_EXCEPTIONS": True,
+        },
+    }
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
@@ -167,8 +189,14 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=int(os.environ.get("ACCESS_TOKEN_LIFETIME", "60"))
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=int(os.environ.get("REFRESH_TOKEN_LIFETIME", "1"))
+    ),
+    # Disable for CQRS.
+    "UPDATE_LAST_LOGIN": False,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("JWT",),
