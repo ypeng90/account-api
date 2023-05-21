@@ -1,3 +1,4 @@
+from datetime import datetime
 from esdbclient import ESDBClient, NewEvent
 from django.conf import settings
 import pickle
@@ -108,11 +109,56 @@ def catch_up_user_events():
                 pass
 
 
-# TODO: Implement this function
-# def catch_up_token_events():
-#     while True:
-#         print("Hello from token events")
-#         time.sleep(60)
+def callback_token_blacklisted(session, token, stream_position):
+    print(token)
+    db = session.client[settings.MONGO_DATABASE]
+    # Setting mongo as default database temporarily and then migration creates a set of
+    # collections, including token_blacklist_blacklistedtoken.
+    tokens = db["token_blacklist_blacklistedtoken"]
+    positions = db["stream_positions"]
+    # Must pass the session to the operations.
+    tokens.insert_one(token, session=session)
+    positions.update_one(
+        {"stream_type": "token"},
+        {"$set": {"stream_position": stream_position}},
+        upsert=True,
+        session=session,
+    )
+
+
+def catch_up_token_events():
+    client_esdb = ESClient("token")
+    client_mongo = MongoClient(
+        host=settings.MONGO_HOST,
+        port=int(settings.MONGO_PORT),
+        username=settings.MONGO_USERNAME,
+        password=settings.MONGO_PASSWORD,
+        replicaSet=settings.MONGO_RSNAME,
+    )
+
+    db = client_mongo[settings.MONGO_DATABASE]
+    result = db["stream_positions"].find_one({"stream_type": "token"})
+    if result:
+        processed_position = result["stream_position"]
+    else:
+        processed_position = 0
+
+    for event in client_esdb.subscribe(processed_position):
+        stream_position = event.stream_position
+        match event.type:
+            case "TokenBlacklisted":
+                token = json.loads(event.data)
+                token["blacklisted_at"] = datetime.fromisoformat(
+                    token["blacklisted_at"]
+                )
+                # Use transaction to ensure atomicity of event processing and "acknowledgement".
+                # Start a transaction, execute the callback, and commit (or abort on error).
+                with client_mongo.start_session() as session:
+                    session.with_transaction(
+                        lambda s: callback_token_blacklisted(s, token, stream_position),
+                    )
+            case _:
+                pass
 
 
 def subscribe_events():
@@ -122,8 +168,8 @@ def subscribe_events():
     # work.
     thread_user = Thread(target=catch_up_user_events, daemon=True)
     thread_user.start()
-    # thread_token = Thread(target=catch_up_token_events, daemon=True)
-    # thread_token.start()
+    thread_token = Thread(target=catch_up_token_events, daemon=True)
+    thread_token.start()
 
 
 def test():

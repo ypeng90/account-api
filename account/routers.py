@@ -3,7 +3,8 @@ class DBRouter:
         """
         Reads go to read-only mongo.
         """
-        if model._meta.model_name == "myuser":
+        models_using_querydb = ["myuser", "blacklistedtoken"]
+        if model._meta.model_name in models_using_querydb:
             return "querydb"
 
         return None

@@ -4,8 +4,13 @@ from djoser.conf import settings
 from djoser.serializers import UserCreateSerializer
 import json
 
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+    TokenBlacklistSerializer,
+)
 from .events import ESClient
+from .tokens import MyRefreshToken
 
 # Workaround to serialize UUIDs
 # from json import JSONEncoder
@@ -20,7 +25,9 @@ from .events import ESClient
 User = get_user_model()
 
 
-class StatelessTokenObtainPairSerializer(TokenObtainPairSerializer):
+class MyStatelessTokenObtainPairSerializer(TokenObtainPairSerializer):
+    token_class = MyRefreshToken
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -30,6 +37,14 @@ class StatelessTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["is_staff"] = user.is_staff
 
         return token
+
+
+class MyTokenRefreshSerializer(TokenRefreshSerializer):
+    token_class = MyRefreshToken
+
+
+class MyTokenBlacklistSerializer(TokenBlacklistSerializer):
+    token_class = MyRefreshToken
 
 
 class MyUserCreateSerializer(UserCreateSerializer):

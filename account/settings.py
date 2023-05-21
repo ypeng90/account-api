@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    # "rest_framework_simplejwt.token_blacklist",
+    # Need to migrate as usual to postgres and then manually create collections
+    # token_blacklist_blacklistedtoken and token_blacklist_outstandingtoken in mongo.
+    "rest_framework_simplejwt.token_blacklist",
     "djoser",
     "drf_spectacular",
     "api",
@@ -198,6 +200,10 @@ SIMPLE_JWT = {
         days=int(os.environ.get("REFRESH_TOKEN_LIFETIME", "1"))
     ),
     # Disable for CQRS.
+    "ROTATE_REFRESH_TOKENS": False,
+    # Disable for CQRS.
+    "BLACKLIST_AFTER_ROTATION": False,
+    # Disable for CQRS.
     "UPDATE_LAST_LOGIN": False,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
@@ -209,9 +215,9 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-    "TOKEN_OBTAIN_SERIALIZER": "api.serializers.StatelessTokenObtainPairSerializer",
-    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
-    "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
+    "TOKEN_OBTAIN_SERIALIZER": "api.serializers.MyStatelessTokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "api.serializers.MyTokenRefreshSerializer",
+    "TOKEN_BLACKLIST_SERIALIZER": "api.serializers.MyTokenBlacklistSerializer",
 }
 
 DJOSER = {
