@@ -1,12 +1,9 @@
-from django.contrib.auth import get_user_model, password_validation
-from django.core import exceptions as django_exceptions
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from djoser.conf import settings
-from djoser.serializers import UserCreateMixin
+from djoser.serializers import UserCreateSerializer
 import json
 
-from rest_framework import serializers
-from rest_framework.settings import api_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .events import ESClient
 
@@ -35,7 +32,7 @@ class StatelessTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
 
-class MyUserCreateMixin(UserCreateMixin):
+class MyUserCreateSerializer(UserCreateSerializer):
     def perform_create(self, validated_data):
         # Use transaction to ensure atomicity of user creation and event sending.
         with transaction.atomic():
@@ -63,33 +60,3 @@ class MyUserCreateMixin(UserCreateMixin):
             client.close()
 
         return user
-
-
-class MyUserCreateSerializer(MyUserCreateMixin, serializers.ModelSerializer):
-    password = serializers.CharField(style={"input_type": "password"}, write_only=True)
-
-    default_error_messages = {
-        "cannot_create_user": settings.CONSTANTS.messages.CANNOT_CREATE_USER_ERROR
-    }
-
-    class Meta:
-        model = User
-        fields = tuple(User.REQUIRED_FIELDS) + (
-            settings.LOGIN_FIELD,
-            settings.USER_ID_FIELD,
-            "password",
-        )
-
-    def validate(self, attrs):
-        user = User(**attrs)
-        password = attrs.get("password")
-
-        try:
-            password_validation.validate_password(password, user)
-        except django_exceptions.ValidationError as e:
-            serializer_error = serializers.as_serializer_error(e)
-            raise serializers.ValidationError(
-                {"password": serializer_error[api_settings.NON_FIELD_ERRORS_KEY]}
-            )
-
-        return attrs
