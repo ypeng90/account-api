@@ -19,16 +19,17 @@ class CustomizedUserViewSet(UserViewSet):
     # UnorderedObjectListWarning is raised without default ordering.
     ordering = ["id"]
 
-    def get_queryset(self):
-        if self.action == "list" or self.action == "retrieve":
-            self.queryset = User.objects.using("querydb")
-        # self.queryset = User.objects.using("querydb")
+    # Not needed since we are using database routers.
+    # def get_queryset(self):
+    #     if self.action == "list" or self.action == "retrieve":
+    #         self.queryset = User.objects.using("querydb")
+    #     # self.queryset = User.objects.using("querydb")
 
-        # Can not override db for create because of hardcoded behaviour
-        # in UserCreateMixin:
-        #   user = User.objects.create_user(**validated_data)
+    #     # Can not override db for create because of hardcoded behaviour
+    #     # in UserCreateMixin:
+    #     #   user = User.objects.create_user(**validated_data)
 
-        return super().get_queryset()
+    #     return super().get_queryset()
 
     @method_decorator(cache_page(CACHE_TTL))
     @method_decorator(vary_on_headers("Authorization"))

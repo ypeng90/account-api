@@ -59,6 +59,7 @@ class ESClient(ESDBClient):
 
 
 def callback_user_created(session, user, stream_position):
+    print(user)
     db = session.client[settings.MONGO_DATABASE]
     # Setting mongo as default database temporarily and then migration creates a set of
     # collections, including api_myuser.

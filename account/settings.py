@@ -111,6 +111,8 @@ DATABASES = {
     },
 }
 
+DATABASE_ROUTERS = ["account.routers.DBRouter"]
+
 REDIS_HOST = os.environ.get("REDIS_HOST")
 REDIS_PORT = os.environ.get("REDIS_PORT")
 REDIS_USER = os.environ.get("REDIS_USER")
