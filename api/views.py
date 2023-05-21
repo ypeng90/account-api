@@ -1,9 +1,18 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
-from djoser.views import UserViewSet
 from django.utils.decorators import method_decorator
+from djoser import signals
+from djoser.conf import settings as djoser_settings
+from djoser.compat import get_user_email
+from djoser.views import UserViewSet
+import json
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .events import ESClient
 
 
 # Create your views here.
@@ -40,3 +49,36 @@ class CustomizedUserViewSet(UserViewSet):
     @method_decorator(vary_on_headers("Authorization"))
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+
+    @action(["post"], detail=False)
+    def activation(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.user
+        # Use transaction to ensure atomicity of user activation and event sending.
+        with transaction.atomic():
+            user.is_active = True
+            user.save()
+            data = json.dumps(
+                {
+                    "id": str(user.id),
+                }
+            )
+            client = ESClient(
+                "user",
+                "UserActivated",
+                data,
+            )
+            client.send()
+            client.close()
+
+        signals.user_activated.send(
+            sender=self.__class__, user=user, request=self.request
+        )
+
+        if djoser_settings.SEND_CONFIRMATION_EMAIL:
+            context = {"user": user}
+            to = [get_user_email(user)]
+            djoser_settings.EMAIL.confirmation(self.request, context).send(to)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

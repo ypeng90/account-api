@@ -60,7 +60,6 @@ class ESClient(ESDBClient):
 
 
 def callback_user_created(session, user, stream_position):
-    print(user)
     db = session.client[settings.MONGO_DATABASE]
     # Setting mongo as default database temporarily and then migration creates a set of
     # collections, including api_myuser.
@@ -68,6 +67,26 @@ def callback_user_created(session, user, stream_position):
     positions = db["stream_positions"]
     # Must pass the session to the operations.
     users.insert_one(user, session=session)
+    positions.update_one(
+        {"stream_type": "user"},
+        {"$set": {"stream_position": stream_position}},
+        upsert=True,
+        session=session,
+    )
+
+
+def callback_user_activated(session, user, stream_position):
+    db = session.client[settings.MONGO_DATABASE]
+    # Setting mongo as default database temporarily and then migration creates a set of
+    # collections, including api_myuser.
+    users = db["api_myuser"]
+    positions = db["stream_positions"]
+    # Must pass the session to the operations.
+    users.update_one(
+        {"id": user["id"]},
+        {"$set": {"is_active": True}},
+        session=session,
+    )
     positions.update_one(
         {"stream_type": "user"},
         {"$set": {"stream_position": stream_position}},
@@ -95,18 +114,25 @@ def catch_up_user_events():
 
     for event in client_esdb.subscribe(processed_position):
         stream_position = event.stream_position
+        user = json.loads(event.data)
+        user["id"] = UUID(user["id"])
+        print(user)
+
         match event.type:
             case "UserCreated":
-                user = json.loads(event.data)
-                user["id"] = UUID(user["id"])
-                # Use transaction to ensure atomicity of event processing and "acknowledgement".
-                # Start a transaction, execute the callback, and commit (or abort on error).
-                with client_mongo.start_session() as session:
-                    session.with_transaction(
-                        lambda s: callback_user_created(s, user, stream_position),
-                    )
+                callback = callback_user_created
+            case "UserActivated":
+                callback = callback_user_activated
             case _:
-                pass
+                callback = None
+
+        if callback:
+            # Use transaction to ensure atomicity of event processing and "acknowledgement".
+            # Start a transaction, execute the callback, and commit (or abort on error).
+            with client_mongo.start_session() as session:
+                session.with_transaction(
+                    lambda s: callback(s, user, stream_position),
+                )
 
 
 def callback_token_blacklisted(session, token, stream_position):

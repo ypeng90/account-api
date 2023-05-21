@@ -3,6 +3,7 @@ class DBRouter:
         """
         Reads go to read-only mongo.
         """
+        # Resend_activation fails due to more info is needed from myuser.
         models_using_querydb = ["myuser", "blacklistedtoken"]
         if model._meta.model_name in models_using_querydb:
             return "querydb"
