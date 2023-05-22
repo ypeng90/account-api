@@ -257,4 +257,122 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_SETTINGS": {"defaultModelsExpandDepth": -1},
 }
 
-EMAIL_BACKEND = "api.gmail.GmailBackend"
+EMAIL_BACKEND = "api.backends.GmailBackend"
+
+# Celery Configuration Options.
+# # Assuming RabbitMQ and Redis are running, run these
+# # commands in order.
+# python manage.py runserver
+# celery -A account worker -l INFO
+# # Only if using beat for scheduling, such as handling
+# # result_expires.
+# # celery -A account beat -l INFO ...
+
+# Let celery use TIME_ZONE, otherwise setting expires
+# might cause immediate revoking.
+# This is default action thus not really necessary. Turning
+# this on/off both shows occasional immediate revoking.
+# CELERY_TIMEZONE = TIME_ZONE
+
+# Overall soft time limit: 9 minutes. SoftTimeLimitExceeded
+# exception will be raised so that certain procedure can
+# be executed before task is killed. Can be specified per
+# task.
+CELERY_TASK_SOFT_TIME_LIMIT = 9 * 60
+# Overall hard time limit: 10 minutes. The task will be
+# killed then. Can be specified per task.
+CELERY_TASK_TIME_LIMIT = 10 * 60
+
+# Disable prefetching.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# Default is json, add pickle here to enable it as serializer.
+CELERY_ACCEPT_CONTENT = ["json", "pickle"]
+# When using json:
+# kombu.exceptions.EncodeError: Object of type ActivationEmail is not JSON serializable
+# if passing email_message to task;
+# kombu.exceptions.EncodeError: Object of type SafeMIMEMultipart is not JSON serializable
+# if passing email_message.message() to task.
+#
+# When using pickle:
+# kombu.exceptions.EncodeError: cannot pickle '_io.BufferedReader' object
+# if passing email_message to task;
+# kombu.exceptions.ContentDisallowed: Refusing to deserialize untrusted content of type
+# pickle (application/x-python-serialize)
+# if passing email_message.message() to task and pickle is not included in
+# CELERY_ACCEPT_CONTENT.
+#
+# When using msgpack (need to install first):
+# kombu.exceptions.EncodeError: can not serialize 'ActivationEmail' object
+# if passing email_message to task;
+CELERY_TASK_SERIALIZER = "pickle"
+
+
+# Run synchronously for testing and debugging.
+# CELERY_TASK_ALWAYS_EAGER = True
+
+# "transport://username:password@hostname:port/virtual_host"
+# To support resource separation, manually setup a virtual host first.
+# Inside `rabbit` container, run:
+# rabbitmqctl add_vhost account-api-dev
+# rabbitmqctl set_permissions -p "account-api-dev" "hellokitty" ".*" ".*" ".*"
+CELERY_BROKER_URL = "amqp://{}:{}@{}:{}/{}".format(
+    os.environ.get("RABBITMQ_DEFAULT_USER"),
+    os.environ.get("RABBITMQ_DEFAULT_PASS"),
+    os.environ.get("RABBITMQ_HOST"),
+    os.environ.get("RABBITMQ_NODE_PORT"),
+    # os.environ.get("RABBITMQ_DEFAULT_VHOST"),
+    "account-api-dev",
+)
+# "redis://username:password@hostname:port/db"
+CELERY_RESULT_BACKEND = "redis://{}:{}@{}:{}/{}".format(
+    os.environ.get("REDIS_USER"),
+    os.environ.get("REDIS_PASSWORD"),
+    os.environ.get("REDIS_HOST"),
+    os.environ.get("REDIS_PORT"),
+    os.environ.get("REDIS_DB"),
+)
+# A built-in periodic task will delete the results
+# after this time (celery.backend_cleanup), assuming
+# that celery beat is enabled. The task runs daily
+# at 4am.
+CELERY_RESULT_EXPIRES = 12 * 60 * 60
+
+# Setup queues manually.
+# Not needed if CELERY_TASK_CREATE_MISSING_QUEUES
+# is True (by default).
+# celery -A account worker -l INFO -> [queues]: celery
+# celery -A account worker -l INFO -Q fast -> [queues]: fast
+# CELERY_TASK_QUEUES = {
+#     "fast": {
+#         "exchange": "fast",
+#         "routing_key": "fast",
+#     },
+#     "slow": {
+#         "exchange": "slow",
+#         "routing_key": "slow",
+#     },
+# }
+# When manual CELERY_TASK_QUEUES is set, things change.
+# celery -A account worker -l INFO
+#   -> [queues]: fast and slow
+# celery -A account worker -l INFO -Q fast
+#   -> [queues]: fast
+CELERY_TASK_QUEUES = {
+    # The default queue for tasks is celery. Either keep
+    # it or set CELERY_TASK_DEFAULT_QUEUE = "fast"
+    "celery": {
+        "exchange": "celery",
+        "routing_key": "celery",
+    },
+    "fast": {
+        "exchange": "fast",
+        "routing_key": "fast",
+    },
+    "slow": {
+        "exchange": "slow",
+        "routing_key": "slow",
+    },
+}
+# celery -A account worker -l INFO
+#   -> [queues]: celery, fast and slow
