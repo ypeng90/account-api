@@ -55,6 +55,9 @@ class CustomizedUserViewSet(UserViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.user
+        # TODO: check why fields like data_joined are populated into querydb upon activation.
+        # Example: guest24 and guest25 do not have data_joined field after user creation but
+        # have it after activation.
         # Use transaction to ensure atomicity of user activation and event sending.
         with transaction.atomic():
             user.is_active = True

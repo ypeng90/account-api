@@ -28,52 +28,46 @@ services:
       - querydb
       - redis
       - rabbit
-  # account-worker:
-  #   image: account-api
-  #   container_name: account-worker
-  #   restart: on-failure
-  #   command:
-  #     [
-  #       "sh",
-  #       "./wait-for",
-  #       "account-api:8000",
-  #       "--",
-  #       "sh",
-  #       "-c",
-  #       "celery -A account worker --concurrency=2 -l INFO -O fair"
-  #     ]
-  #   env_file:
-  #     - ./.env.dev
-  #   volumes:
-  #     - .:/home/app
-  #   depends_on:
-  #     - account-api
-  #   networks:
-  #     - default
-  #     - redis
-  #     - rabbit
-  # nginx:
-  #   build: ./nginx
-  #   image: shopping-nginx
-  #   container_name: shopping-nginx
-  #   restart: on-failure
-  #   volumes:
-  #     - ./shopping/staticfiles:/home/app/staticfiles
-  #   ports:
-  #     - 80:80
-  #   depends_on:
-  #     - web
+  account-worker:
+    image: account-api
+    container_name: account-worker
+    restart: on-failure
+    command:
+      [
+        "sh",
+        "./wait-for",
+        "account-api:8000",
+        "--",
+        "sh",
+        "-c",
+        "celery -A account worker --concurrency=2 -l INFO -O fair"
+      ]
+    env_file:
+      - ./.env.dev
+    volumes:
+      - .:/home/app
+    depends_on:
+      - account-api
+    networks:
+      - default
+      - redis
+      - rabbit
 
 networks:
   default:
     name: account-api
   commanddb:
     name: postgres
+    external: true
   esdb:
     name: esdb
+    external: true
   querydb:
     name: mongo
+    external: true
   redis:
     name: redis
+    external: true
   rabbit:
     name: rabbit
+    external: true

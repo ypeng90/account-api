@@ -279,6 +279,7 @@ EMAIL_BACKEND = "api.backends.GmailBackend"
 # be executed before task is killed. Can be specified per
 # task.
 CELERY_TASK_SOFT_TIME_LIMIT = 9 * 60
+
 # Overall hard time limit: 10 minutes. The task will be
 # killed then. Can be specified per task.
 CELERY_TASK_TIME_LIMIT = 10 * 60
@@ -307,23 +308,23 @@ CELERY_ACCEPT_CONTENT = ["json", "pickle"]
 # if passing email_message to task;
 CELERY_TASK_SERIALIZER = "pickle"
 
-
 # Run synchronously for testing and debugging.
 # CELERY_TASK_ALWAYS_EAGER = True
 
-# "transport://username:password@hostname:port/virtual_host"
 # To support resource separation, manually setup a virtual host first.
 # Inside `rabbit` container, run:
 # rabbitmqctl add_vhost account-api-dev
 # rabbitmqctl set_permissions -p "account-api-dev" "hellokitty" ".*" ".*" ".*"
+#
+# "transport://username:password@hostname:port/virtual_host"
 CELERY_BROKER_URL = "amqp://{}:{}@{}:{}/{}".format(
     os.environ.get("RABBITMQ_DEFAULT_USER"),
     os.environ.get("RABBITMQ_DEFAULT_PASS"),
     os.environ.get("RABBITMQ_HOST"),
     os.environ.get("RABBITMQ_NODE_PORT"),
-    # os.environ.get("RABBITMQ_DEFAULT_VHOST"),
-    "account-api-dev",
+    os.environ.get("RABBITMQ_DEFAULT_VHOST"),
 )
+
 # "redis://username:password@hostname:port/db"
 CELERY_RESULT_BACKEND = "redis://{}:{}@{}:{}/{}".format(
     os.environ.get("REDIS_USER"),
@@ -332,15 +333,14 @@ CELERY_RESULT_BACKEND = "redis://{}:{}@{}:{}/{}".format(
     os.environ.get("REDIS_PORT"),
     os.environ.get("REDIS_DB"),
 )
-# A built-in periodic task will delete the results
-# after this time (celery.backend_cleanup), assuming
-# that celery beat is enabled. The task runs daily
-# at 4am.
+
+# A built-in periodic task will delete the results after this time
+# (celery.backend_cleanup), assuming that celery beat is enabled. The
+# task runs daily at 4am.
 CELERY_RESULT_EXPIRES = 12 * 60 * 60
 
 # Setup queues manually.
-# Not needed if CELERY_TASK_CREATE_MISSING_QUEUES
-# is True (by default).
+# Not needed if CELERY_TASK_CREATE_MISSING_QUEUES is True (by default).
 # celery -A account worker -l INFO -> [queues]: celery
 # celery -A account worker -l INFO -Q fast -> [queues]: fast
 # CELERY_TASK_QUEUES = {
