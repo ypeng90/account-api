@@ -46,8 +46,7 @@ class Gmail:
             with open(f"{CURR_DIR}/token.json", "w") as token:
                 token.write(creds.to_json())
 
-        service = build("gmail", "v1", credentials=creds)
-        return service
+        return build("gmail", "v1", credentials=creds)
 
     # Passed message is acutally email_message.message() due to kombu.exceptions.EncodeError
     def send_message(self, message):
