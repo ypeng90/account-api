@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+
 from datetime import timedelta
 import os
 from pathlib import Path
@@ -317,22 +318,10 @@ CELERY_TASK_SERIALIZER = "pickle"
 # rabbitmqctl set_permissions -p "account-api-dev" "hellokitty" ".*" ".*" ".*"
 #
 # "transport://username:password@hostname:port/virtual_host"
-CELERY_BROKER_URL = "amqp://{}:{}@{}:{}/{}".format(
-    os.environ.get("RABBITMQ_DEFAULT_USER"),
-    os.environ.get("RABBITMQ_DEFAULT_PASS"),
-    os.environ.get("RABBITMQ_HOST"),
-    os.environ.get("RABBITMQ_NODE_PORT"),
-    os.environ.get("RABBITMQ_DEFAULT_VHOST"),
-)
+CELERY_BROKER_URL = f'amqp://{os.environ.get("RABBITMQ_DEFAULT_USER")}:{os.environ.get("RABBITMQ_DEFAULT_PASS")}@{os.environ.get("RABBITMQ_HOST")}:{os.environ.get("RABBITMQ_NODE_PORT")}/{os.environ.get("RABBITMQ_DEFAULT_VHOST")}'
 
 # "redis://username:password@hostname:port/db"
-CELERY_RESULT_BACKEND = "redis://{}:{}@{}:{}/{}".format(
-    os.environ.get("REDIS_USER"),
-    os.environ.get("REDIS_PASSWORD"),
-    os.environ.get("REDIS_HOST"),
-    os.environ.get("REDIS_PORT"),
-    os.environ.get("REDIS_DB"),
-)
+CELERY_RESULT_BACKEND = f'redis://{os.environ.get("REDIS_USER")}:{os.environ.get("REDIS_PASSWORD")}@{os.environ.get("REDIS_HOST")}:{os.environ.get("REDIS_PORT")}/{os.environ.get("REDIS_DB")}'
 
 # A built-in periodic task will delete the results after this time
 # (celery.backend_cleanup), assuming that celery beat is enabled. The

@@ -5,10 +5,7 @@ class DBRouter:
         """
         # Resend_activation fails due to more info is needed from myuser.
         models_using_querydb = ["myuser", "blacklistedtoken"]
-        if model._meta.model_name in models_using_querydb:
-            return "querydb"
-
-        return None
+        return "querydb" if model._meta.model_name in models_using_querydb else None
 
     def db_for_write(self, model, **hints):
         """

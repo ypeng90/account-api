@@ -37,26 +37,21 @@ class ESClient(ESDBClient):
         assert self.event is not None
 
         expected_position = self.get_stream_position(stream_name=self.stream_name)
-        commit_position = self.append_events(
+        return self.append_events(
             stream_name=self.stream_name,
             expected_position=expected_position,
             events=[self.event],
         )
 
-        return commit_position
-
     def receive(self, stream_position):
-        recorded = self.read_stream_events(
+        return self.read_stream_events(
             stream_name=self.stream_name, stream_position=stream_position
         )
-
-        return recorded
 
     def subscribe(self, stream_position):
-        subscription = self.subscribe_stream_events(
+        return self.subscribe_stream_events(
             stream_name=self.stream_name, stream_position=stream_position
         )
-        return subscription
 
 
 def callback_user_created(session, user, stream_position):
@@ -106,8 +101,7 @@ def catch_up_user_events():
     )
 
     db = client_mongo[settings.MONGO_DATABASE]
-    result = db["stream_positions"].find_one({"stream_type": "user"})
-    if result:
+    if result := db["stream_positions"].find_one({"stream_type": "user"}):
         processed_position = result["stream_position"]
     else:
         processed_position = 0
@@ -163,8 +157,7 @@ def catch_up_token_events():
     )
 
     db = client_mongo[settings.MONGO_DATABASE]
-    result = db["stream_positions"].find_one({"stream_type": "token"})
-    if result:
+    if result := db["stream_positions"].find_one({"stream_type": "token"}):
         processed_position = result["stream_position"]
     else:
         processed_position = 0
